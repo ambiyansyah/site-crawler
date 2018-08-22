@@ -1,16 +1,9 @@
 var Crawler = require("simplecrawler");
-var crawler = Crawler(process.argv[2])
-    .on("fetchcomplete", function () {
-        console.log("Fetched a resource!")
-    });
 var cheerio = require('cheerio');
 var mysql = require('mysql');
-var con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "project_crawler"
-});
+var fs = require('fs');
+var db = JSON.parse(fs.readFileSync('./db.json', 'utf8'));
+var con = mysql.createConnection(db);
 var url = require('url');
 var randomua = require('random-user-agent');
 var title_tag = process.argv[3];
@@ -19,6 +12,11 @@ con.connect(function (err) {
     if (err) throw err;
     console.log("Connected to database!");
 });
+
+var crawler = Crawler(process.argv[2])
+    .on("fetchcomplete", function () {
+        console.log("Fetched a resource!")
+    });
 
 crawler.interval = 1000;
 crawler.maxConcurrency = 3;
