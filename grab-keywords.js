@@ -12,8 +12,7 @@ var con = mysql.createConnection(db);
 var config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
 var search_for = config.search_for.split(',');
 var site = process.argv[2];
-var title_tag = process.argv[3];
-var category_tag = process.argv[4];
+var keyword_tag = process.argv[3];
 
 // create connection to database
 con.connect(function (err) {
@@ -35,34 +34,24 @@ var crawler = Crawler(site)
             normalizeWhitespace: true
         });
 
-        $(title_tag).map(function (i_title, el_title) {
-            var title = $(el_title).text().trim();
+        $(keyword_tag).map(function (i_title, el_keyword) {
+            var keyword = $(el_keyword).text().trim();
 
-            if (title && title.length > 20 && !tools.is_blacklist(title, search_for)) {
-                var category = $(category_tag).map(function (i_category, el_category) {
-                    return $(el_category).text();
-                }).get().join(' ');
+            if (keyword && keyword.length > 20 && !tools.is_blacklist(keyword, search_for)) {
+                var sql = "REPLACE INTO keywords_en (domain, link, keyword, status) VALUES ?";
+                var values = [
+                    [
+                        url.parse(queueItem.url).hostname,
+                        url.parse(queueItem.url).pathname,
+                        keyword,
+                        '0'
+                    ]
+                ];
 
-                if (category.replace(/\s/g,'') !== '') {
-                    // console.log(title);
-                    // console.log(category.replace(/\s/g,''));
-
-                    var sql = "REPLACE INTO keywords_en (domain, link, category, title, status) VALUES ?";
-                    var values = [
-                        [
-                            url.parse(queueItem.url).hostname,
-                            url.parse(queueItem.url).pathname,
-                            category.replace(/\s/g,','),
-                            title,
-                            '1'
-                        ]
-                    ];
-    
-                    con.query(sql, [values], function (err, result) {
-                        if (err) throw err;
-                        console.log("Number of records inserted: " + result.affectedRows);
-                    });
-                }
+                con.query(sql, [values], function (err, result) {
+                    if (err) throw err;
+                    console.log("Number of records inserted: " + result.affectedRows);
+                });
             }
         });
     });
